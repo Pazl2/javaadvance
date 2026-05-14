@@ -3,9 +3,9 @@ spring:
     name: javaadvance
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/javaadvance}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/test_db}
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:3049}
+    password: ${DB_PASSWORD:SECRET}
 
   hibernate:
     ddl-auto: none
