@@ -1,13 +1,16 @@
 package com.javaadvance.entity;
 
 import jakarta.persistence.*;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payment_cards")
-@EnableJpaAuditing
+@EntityListeners(AuditingEntityListener.class)
 public class PaymentCard {
 
     @Id
@@ -18,6 +21,9 @@ public class PaymentCard {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "number", nullable = false)
+    private String number;
+
     @Column(name = "holder", nullable = false)
     private String holder;
 
@@ -26,5 +32,13 @@ public class PaymentCard {
 
     @Column(name = "active", nullable = false)
     private boolean active;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
 }
