@@ -10,7 +10,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        @Index(name = "idx_users_email", columnList = "email"),
+        @Index(name = "idx_users_active", columnList = "active")
+})
 @EntityListeners(AuditingEntityListener.class)
 public class User {
 
