@@ -1,6 +1,7 @@
 package com.javaadvance.service;
 
 import com.javaadvance.entity.User;
+import com.javaadvance.mapper.UserMapper;
 import com.javaadvance.repository.UserRepository;
 import com.javaadvance.specification.UserSpecification;
 import org.springframework.data.domain.Page;
