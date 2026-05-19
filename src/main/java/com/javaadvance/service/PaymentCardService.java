@@ -1,7 +1,11 @@
 package com.javaadvance.service;
 
+import com.javaadvance.dto.PaymentCardCreateRequest;
+import com.javaadvance.dto.PaymentCardResponse;
+import com.javaadvance.dto.PaymentCardUpdateRequest;
 import com.javaadvance.entity.PaymentCard;
 import com.javaadvance.entity.User;
+import com.javaadvance.mapper.PaymentCardMapper;
 import com.javaadvance.repository.PaymentCardRepository;
 import com.javaadvance.repository.UserRepository;
 import com.javaadvance.specification.PaymentCardSpecification;
@@ -20,45 +24,64 @@ public class PaymentCardService {
 
     private final PaymentCardRepository paymentCardRepository;
     private final UserRepository userRepository;
+    private final PaymentCardMapper paymentCardMapper;
 
     public PaymentCardService(PaymentCardRepository paymentCardRepository,
-                               UserRepository userRepository){
+                               UserRepository userRepository,
+                              PaymentCardMapper paymentCardMapper){
         this.paymentCardRepository = paymentCardRepository;
         this.userRepository = userRepository;
+        this.paymentCardMapper = paymentCardMapper;
     }
 
     @Transactional
-    public void createCard(PaymentCard card, Long userId){
+    public PaymentCardResponse createCard(PaymentCardCreateRequest dto, Long userId){
         User currentUser = userRepository.findById(userId).orElseThrow(()->
                 new NoSuchElementException("No such user with " + userId + " id"));
         if(paymentCardRepository.countByUserId(userId) >= 5){
             throw new IllegalStateException("User can have only 5 cards");
         }
+        PaymentCard card = paymentCardMapper.toEntity(dto);
         currentUser.addCard(card);
         userRepository.save(currentUser);
+        return paymentCardMapper.toDto(card);
     }
 
-    public Page<PaymentCard> getPaymentCardsWithPaginationAndFilter(String holder,
+    public Page<PaymentCardResponse> getPaymentCardsWithPaginationAndFilter(String holder,
                                                              int page, int size){
         Specification<PaymentCard> spec = Specification.where((Specification<PaymentCard>) null);
         spec = spec.and(PaymentCardSpecification.hasHolder(holder));
-        return paymentCardRepository.findAll(spec, PageRequest.of(page, size));
+        return paymentCardRepository.findAll(spec, PageRequest.of(page, size)).map(paymentCardMapper::toDto);
     }
 
-    public PaymentCard getCardById(Long cardId){
+
+    public PaymentCardResponse getCardById(Long cardId){
+        return paymentCardMapper.toDto(getCardEntityById(cardId));
+    }
+
+    private PaymentCard getCardEntityById(Long cardId){
         return paymentCardRepository.findById(cardId).orElseThrow(() ->
                 new NoSuchElementException("No such card with " + cardId + " id"));
     }
 
-    public List<PaymentCard> getCardsByUserId(Long userId){
-        return paymentCardRepository.findByUserId(userId);
+    public List<PaymentCardResponse> getCardsByUserId(Long userId){
+        if (!userRepository.existsById(userId)) {
+            throw new NoSuchElementException("User not found with id " + userId);
+        }
+        return paymentCardRepository.findByUserId(userId)
+                .stream()
+                .map(paymentCardMapper::toDto)
+                .toList();
     }
 
     @Transactional
-    public void updatePaymentCard(Long id, String number,
-                                  String holder, LocalDate expirationDate,
-                                  boolean active){
-        paymentCardRepository.updatePaymentCard(id, number, holder, expirationDate, active);
+    public void updatePaymentCard(PaymentCardUpdateRequest dto){
+        PaymentCard card = getCardEntityById((dto.getId()));
+
+        paymentCardMapper.updateFromDto(dto, card);
+
+        paymentCardRepository.updatePaymentCard(card.getId(), card.getNumber(),
+                card.getHolder(), card.getExpirationDate(), card.isActive());
     }
 
     @Transactional

@@ -12,6 +12,9 @@ import java.time.LocalDate;
 public interface UserRepository extends JpaRepository<User, Long>,
         JpaSpecificationExecutor<User> {
 
+    public boolean existsByEmail(String email);
+
+    public boolean existsByEmailAndIdNot(String email, Long id);
 
     @Modifying
     @Query("UPDATE User u SET u.name = :name, u.surname = :surname, " +
