@@ -27,6 +27,12 @@ public interface PaymentCardRepository extends JpaRepository<PaymentCard, Long>,
                            @Param("active") boolean active);
 
 
+    @Modifying
+    @Query(value = "UPDATE payment_cards SET active = :active, updated_at = NOW() " +
+            "WHERE id = :id", nativeQuery = true)
+    public void updateActive(@Param("id") Long id, @Param("active") boolean active);
+
+
 
 
 
