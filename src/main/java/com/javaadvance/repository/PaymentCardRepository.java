@@ -14,6 +14,7 @@ public interface PaymentCardRepository extends JpaRepository<PaymentCard, Long>,
         JpaSpecificationExecutor<PaymentCard> {
 
     public List<PaymentCard> findByUserId(Long userId);
+    public int countByUserId(Long userId);
 
     @Modifying
     @Query("UPDATE PaymentCard p SET p.number = :number, p.holder = :holder, " +

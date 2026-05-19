@@ -34,7 +34,8 @@ public class UserService {
             String surname,
             int page, int size){
 
-        Specification<User> spec = UserSpecification.hasFirstName(firstName);
+        Specification<User> spec = Specification.where((Specification<User>) null);
+        spec = spec.and(UserSpecification.hasFirstName(firstName));
         spec = spec.and(UserSpecification.hasSurname(surname));
 
         return userRepository.findAll(spec, PageRequest.of(page, size));
