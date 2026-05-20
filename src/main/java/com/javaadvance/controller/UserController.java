@@ -1,9 +1,12 @@
 package com.javaadvance.controller;
 
 import com.javaadvance.dto.ActiveStatusRequest;
+import com.javaadvance.dto.PaymentCardCreateRequest;
+import com.javaadvance.dto.PaymentCardResponse;
 import com.javaadvance.dto.UserCreateRequest;
 import com.javaadvance.dto.UserResponse;
 import com.javaadvance.dto.UserUpdateRequest;
+import com.javaadvance.service.PaymentCardService;
 import com.javaadvance.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -19,14 +22,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;
+    private final PaymentCardService paymentCardService;
 
-    public UserController(UserService userService){
+    public UserController(UserService userService,
+                          PaymentCardService paymentCardService){
         this.userService = userService;
+        this.paymentCardService = paymentCardService;
     }
 
     @PostMapping
@@ -64,6 +72,21 @@ public class UserController {
             @RequestParam(defaultValue = "10") int size
     ){
         return ResponseEntity.ok().body(userService.getUsersWithPaginationAndFilter(firstName,surname,page,size));
+    }
+
+
+
+
+    @PostMapping("/{userId}/cards")
+    public ResponseEntity<PaymentCardResponse> createCard(@RequestBody @Valid PaymentCardCreateRequest dto,
+                                                          @PathVariable Long userId){
+        PaymentCardResponse response = paymentCardService.createCard(dto, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/{userId}/cards")
+    public ResponseEntity<List<PaymentCardResponse>> getCardsByUserId(@PathVariable Long userId){
+        return ResponseEntity.ok().body(paymentCardService.getCardsByUserId(userId));
     }
 
 }
