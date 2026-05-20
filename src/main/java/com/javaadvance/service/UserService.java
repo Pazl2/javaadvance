@@ -58,18 +58,19 @@ public class UserService {
     }
 
     @Transactional
-    public void updateUser(UserUpdateRequest dto){
+    public UserResponse updateUser(Long id, UserUpdateRequest dto){
 
-        if(userRepository.existsByEmailAndIdNot(dto.getEmail(), dto.getId())){
+        if(userRepository.existsByEmailAndIdNot(dto.getEmail(), id)){
             throw new DublicateEmailException("User with email " + dto.getEmail() + " exists");
         }
 
-        User user = getUserEntityById(dto.getId());
+        User user = getUserEntityById(id);
 
         userMapper.updateFromDto(dto, user);
         userRepository.updateUser(user.getId(), user.getName(),
                 user.getSurname(), user.getBirthDate(),
                 user.getEmail(), user.isActive());
+        return userMapper.toDto(user);
     }
 
     @Transactional

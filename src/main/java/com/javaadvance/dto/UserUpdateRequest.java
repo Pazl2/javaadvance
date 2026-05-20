@@ -11,8 +11,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class UserUpdateRequest {
-    @NotNull
-    private Long id;
+
     @NotBlank
     private String name;
     @NotBlank

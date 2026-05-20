@@ -10,8 +10,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class PaymentCardUpdateRequest {
-    @NotNull
-    private Long id;
+
     @NotBlank
     private String number;
     @NotBlank

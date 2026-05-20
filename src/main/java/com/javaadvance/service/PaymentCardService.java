@@ -77,13 +77,15 @@ public class PaymentCardService {
     }
 
     @Transactional
-    public void updatePaymentCard(PaymentCardUpdateRequest dto){
-        PaymentCard card = getCardEntityById((dto.getId()));
+    public PaymentCardResponse updatePaymentCard(Long id, PaymentCardUpdateRequest dto){
+        PaymentCard card = getCardEntityById(id);
 
         paymentCardMapper.updateFromDto(dto, card);
 
         paymentCardRepository.updatePaymentCard(card.getId(), card.getNumber(),
                 card.getHolder(), card.getExpirationDate(), card.isActive());
+
+        return paymentCardMapper.toDto(card);
     }
 
     @Transactional
