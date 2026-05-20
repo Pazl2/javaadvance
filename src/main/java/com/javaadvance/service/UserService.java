@@ -4,6 +4,8 @@ import com.javaadvance.dto.UserCreateRequest;
 import com.javaadvance.dto.UserResponse;
 import com.javaadvance.dto.UserUpdateRequest;
 import com.javaadvance.entity.User;
+import com.javaadvance.exception.DublicateEmailException;
+import com.javaadvance.exception.ResourceNotFoundException;
 import com.javaadvance.mapper.UserMapper;
 import com.javaadvance.repository.UserRepository;
 import com.javaadvance.specification.UserSpecification;
@@ -12,8 +14,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDate;
-import java.util.NoSuchElementException;
 
 @Service
 public class UserService {
@@ -29,7 +29,7 @@ public class UserService {
     public UserResponse createUser(UserCreateRequest dto){
         User user = userMapper.toEntity(dto);
         if(userRepository.existsByEmail(dto.getEmail())) {
-            throw new IllegalStateException("User with email " + dto.getEmail() + " exists");
+            throw new DublicateEmailException("User with email " + dto.getEmail() + " exists");
         }
         User savedUser = userRepository.save(user);
         return userMapper.toDto(savedUser);
@@ -41,7 +41,7 @@ public class UserService {
 
     private User getUserEntityById (Long userId){
         return userRepository.findById(userId).orElseThrow(
-                ()-> new NoSuchElementException("No such User with "+ userId + " id"));
+                ()-> new ResourceNotFoundException("No such User with "+ userId + " id"));
     }
 
     public Page<UserResponse> getUsersWithPaginationAndFilter(
@@ -61,7 +61,7 @@ public class UserService {
     public void updateUser(UserUpdateRequest dto){
 
         if(userRepository.existsByEmailAndIdNot(dto.getEmail(), dto.getId())){
-            throw new IllegalStateException("User with email " + dto.getEmail() + " exists");
+            throw new DublicateEmailException("User with email " + dto.getEmail() + " exists");
         }
 
         User user = getUserEntityById(dto.getId());

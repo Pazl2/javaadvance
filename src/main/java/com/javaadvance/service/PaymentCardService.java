@@ -5,6 +5,8 @@ import com.javaadvance.dto.PaymentCardResponse;
 import com.javaadvance.dto.PaymentCardUpdateRequest;
 import com.javaadvance.entity.PaymentCard;
 import com.javaadvance.entity.User;
+import com.javaadvance.exception.ResourceNotFoundException;
+import com.javaadvance.exception.TooManyCardsException;
 import com.javaadvance.mapper.PaymentCardMapper;
 import com.javaadvance.repository.PaymentCardRepository;
 import com.javaadvance.repository.UserRepository;
@@ -37,9 +39,9 @@ public class PaymentCardService {
     @Transactional
     public PaymentCardResponse createCard(PaymentCardCreateRequest dto, Long userId){
         User currentUser = userRepository.findById(userId).orElseThrow(()->
-                new NoSuchElementException("No such user with " + userId + " id"));
+                new ResourceNotFoundException("No such user with " + userId + " id"));
         if(paymentCardRepository.countByUserId(userId) >= 5){
-            throw new IllegalStateException("User can have only 5 cards");
+            throw new TooManyCardsException("User can have only 5 cards");
         }
         PaymentCard card = paymentCardMapper.toEntity(dto);
         currentUser.addCard(card);
@@ -61,12 +63,12 @@ public class PaymentCardService {
 
     private PaymentCard getCardEntityById(Long cardId){
         return paymentCardRepository.findById(cardId).orElseThrow(() ->
-                new NoSuchElementException("No such card with " + cardId + " id"));
+                new ResourceNotFoundException("No such card with " + cardId + " id"));
     }
 
     public List<PaymentCardResponse> getCardsByUserId(Long userId){
         if (!userRepository.existsById(userId)) {
-            throw new NoSuchElementException("User not found with id " + userId);
+            throw new ResourceNotFoundException("User not found with id " + userId);
         }
         return paymentCardRepository.findByUserId(userId)
                 .stream()
