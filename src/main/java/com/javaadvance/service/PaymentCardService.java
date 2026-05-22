@@ -38,8 +38,8 @@ public class PaymentCardService {
     }
 
     @Caching(evict = {
-            @CacheEvict(value = "users", key = "userId"),
-            @CacheEvict(value = "userCards", key = "userId")
+            @CacheEvict(value = "users", key = "#userId"),
+            @CacheEvict(value = "userCards", key = "#userId")
     })
 
     @Transactional
@@ -86,8 +86,8 @@ public class PaymentCardService {
 
     @Caching( evict = {
             @CacheEvict(value = "cards", key = "#id"),
-            @CacheEvict(value = "users", key = "result.userId"),
-            @CacheEvict(value = "userCards", key = "result.userId")
+            @CacheEvict(value = "users", key = "#result.userId"),
+            @CacheEvict(value = "userCards", key = "#result.userId")
     })
     @Transactional
     public PaymentCardResponse updatePaymentCard(Long id, PaymentCardUpdateRequest dto){
@@ -104,8 +104,8 @@ public class PaymentCardService {
 
     @Caching(evict = {
             @CacheEvict(value = "cards", key = "#id"),
-            @CacheEvict(value = "users", key = "result.userId"),
-            @CacheEvict(value = "userCards", key = "result.userId")
+            @CacheEvict(value = "users", key = "#result.userId"),
+            @CacheEvict(value = "userCards", key = "#result.userId")
     })
 
     @Transactional
