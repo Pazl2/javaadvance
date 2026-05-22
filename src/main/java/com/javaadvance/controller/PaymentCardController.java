@@ -57,11 +57,11 @@ public class PaymentCardController {
     }
 
     @PatchMapping("/{id}/active")
-    public ResponseEntity<Void> updateActive(
+    public ResponseEntity<PaymentCardResponse> updateActive(
             @PathVariable Long id,
             @RequestBody @Valid ActiveStatusRequest active){
-        paymentCardService.updateActivity(id, active.isActive());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().body(
+                paymentCardService.updateActivity(id, active.isActive()));
     }
 
 }

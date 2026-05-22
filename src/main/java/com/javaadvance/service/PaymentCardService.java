@@ -12,6 +12,8 @@ import com.javaadvance.repository.PaymentCardRepository;
 import com.javaadvance.repository.UserRepository;
 import com.javaadvance.specification.PaymentCardSpecification;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
@@ -35,6 +37,11 @@ public class PaymentCardService {
         this.paymentCardMapper = paymentCardMapper;
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "users", key = "userId"),
+            @CacheEvict(value = "userCards", key = "userId")
+    })
+
     @Transactional
     public PaymentCardResponse createCard(PaymentCardCreateRequest dto, Long userId){
         User currentUser = userRepository.findById(userId).orElseThrow(()->
@@ -56,6 +63,7 @@ public class PaymentCardService {
     }
 
 
+    @Cacheable(value = "cards", key = "#cardId")
     public PaymentCardResponse getCardById(Long cardId){
         return paymentCardMapper.toDto(getCardEntityById(cardId));
     }
@@ -65,6 +73,7 @@ public class PaymentCardService {
                 new ResourceNotFoundException("No such card with " + cardId + " id"));
     }
 
+    @Cacheable(value = "userCards", key = "#userId")
     public List<PaymentCardResponse> getCardsByUserId(Long userId){
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found with id " + userId);
@@ -75,6 +84,11 @@ public class PaymentCardService {
                 .toList();
     }
 
+    @Caching( evict = {
+            @CacheEvict(value = "cards", key = "#id"),
+            @CacheEvict(value = "users", key = "result.userId"),
+            @CacheEvict(value = "userCards", key = "result.userId")
+    })
     @Transactional
     public PaymentCardResponse updatePaymentCard(Long id, PaymentCardUpdateRequest dto){
         PaymentCard card = getCardEntityById(id);
@@ -87,9 +101,18 @@ public class PaymentCardService {
         return paymentCardMapper.toDto(card);
     }
 
+
+    @Caching(evict = {
+            @CacheEvict(value = "cards", key = "#id"),
+            @CacheEvict(value = "users", key = "result.userId"),
+            @CacheEvict(value = "userCards", key = "result.userId")
+    })
+
     @Transactional
-    public void updateActivity(Long id, boolean active){
+    public PaymentCardResponse updateActivity(Long id, boolean active){
         paymentCardRepository.updateActive(id,active);
+        PaymentCard card = getCardEntityById(id);
+        return paymentCardMapper.toDto(card);
     }
 
 }
