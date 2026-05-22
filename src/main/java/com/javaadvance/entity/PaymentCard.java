@@ -61,6 +61,4 @@ public class PaymentCard {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-
 }

@@ -71,5 +71,4 @@ public class User {
         this.paymentCards.add(card);
         card.setUser(this);
     }
-
 }
