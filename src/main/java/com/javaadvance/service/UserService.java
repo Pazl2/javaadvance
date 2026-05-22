@@ -9,6 +9,8 @@ import com.javaadvance.exception.ResourceNotFoundException;
 import com.javaadvance.mapper.UserMapper;
 import com.javaadvance.repository.UserRepository;
 import com.javaadvance.specification.UserSpecification;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
@@ -35,13 +37,18 @@ public class UserService {
         return userMapper.toDto(savedUser);
     }
 
+    @Cacheable(value = "users", key = "#userId")
     public UserResponse getUserById(Long userId) {
-        return userMapper.toDto(getUserEntityById(userId));
+        User user = getUserEntityById(userId);
+        user.getPaymentCards().size();
+
+        return userMapper.toDto(user);
     }
 
     private User getUserEntityById (Long userId){
         return userRepository.findById(userId).orElseThrow(
                 ()-> new ResourceNotFoundException("No such User with "+ userId + " id"));
+
     }
 
     public Page<UserResponse> getUsersWithPaginationAndFilter(
@@ -57,6 +64,7 @@ public class UserService {
                 .map(userMapper::toDto);
     }
 
+    @CacheEvict(value = "users", key = "#id")
     @Transactional
     public UserResponse updateUser(Long id, UserUpdateRequest dto){
 
@@ -73,6 +81,7 @@ public class UserService {
         return userMapper.toDto(user);
     }
 
+    @CacheEvict(value = "users", key = "#id")
     @Transactional
     public void updateUserActivity(Long id, boolean active){
         userRepository.updateActive(id, active);
