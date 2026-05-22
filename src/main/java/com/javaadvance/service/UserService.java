@@ -56,9 +56,18 @@ public class UserService {
             String surname,
             int page, int size){
 
-        Specification<User> spec = Specification.where((Specification<User>) null);
-        spec = spec.and(UserSpecification.hasFirstName(firstName));
-        spec = spec.and(UserSpecification.hasSurname(surname));
+        Specification<User> spec = null;
+
+        if (firstName != null && !firstName.isBlank()) {
+            spec = UserSpecification.hasFirstName(firstName);
+        }
+        if (surname != null && !surname.isBlank()) {
+            if (spec == null) {
+                spec = UserSpecification.hasSurname(surname);
+            } else {
+                spec = spec.and(UserSpecification.hasSurname(surname));
+            }
+        }
 
         return userRepository.findAll(spec, PageRequest.of(page, size))
                 .map(userMapper::toDto);

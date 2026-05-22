@@ -11,6 +11,7 @@ import com.javaadvance.mapper.PaymentCardMapper;
 import com.javaadvance.repository.PaymentCardRepository;
 import com.javaadvance.repository.UserRepository;
 import com.javaadvance.specification.PaymentCardSpecification;
+import com.javaadvance.specification.UserSpecification;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -57,8 +58,12 @@ public class PaymentCardService {
 
     public Page<PaymentCardResponse> getPaymentCardsWithPaginationAndFilter(String holder,
                                                              int page, int size){
-        Specification<PaymentCard> spec = Specification.where((Specification<PaymentCard>) null);
-        spec = spec.and(PaymentCardSpecification.hasHolder(holder));
+        Specification<PaymentCard> spec = null;
+
+        if (holder != null && !holder.isBlank()) {
+            spec = PaymentCardSpecification.hasHolder(holder);
+        }
+
         return paymentCardRepository.findAll(spec, PageRequest.of(page, size)).map(paymentCardMapper::toDto);
     }
 
