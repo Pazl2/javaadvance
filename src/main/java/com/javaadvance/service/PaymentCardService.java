@@ -47,13 +47,18 @@ public class PaymentCardService {
     public PaymentCardResponse createCard(PaymentCardCreateRequest dto, Long userId){
         User currentUser = userRepository.findById(userId).orElseThrow(()->
                 new ResourceNotFoundException("No such user with " + userId + " id"));
+
         if(paymentCardRepository.countByUserId(userId) >= 5){
             throw new TooManyCardsException("User can have only 5 cards");
         }
+
         PaymentCard card = paymentCardMapper.toEntity(dto);
         currentUser.addCard(card);
-        userRepository.save(currentUser);
-        return paymentCardMapper.toDto(card);
+
+        User savedUser = userRepository.save(currentUser);
+        PaymentCard savedCard = savedUser.getPaymentCards().get(savedUser.getPaymentCards().size() - 1);
+
+        return paymentCardMapper.toDto(savedCard);
     }
 
     public Page<PaymentCardResponse> getPaymentCardsWithPaginationAndFilter(String holder,

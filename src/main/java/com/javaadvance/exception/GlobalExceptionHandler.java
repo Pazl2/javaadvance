@@ -25,8 +25,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TooManyCardsException.class)
     public ResponseEntity<ErrorResponse> handleTooManyCards(TooManyCardsException ex){
-        ErrorResponse body = new ErrorResponse(HttpStatus.UNPROCESSABLE_CONTENT.value(), "Too many cards", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(body);
+        ErrorResponse body = new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY.value(), "Too many cards", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

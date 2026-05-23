@@ -11,10 +11,12 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface PaymentCardMapper {
 
-    public PaymentCard toEntity(PaymentCardCreateRequest dto);
-    @Mapping(source = "user.id", target = "userId")
-    public PaymentCardResponse toDto(PaymentCard entity);
-    public void updateFromDto(PaymentCardUpdateRequest dto, @MappingTarget PaymentCard entity);
+    @Mapping(target = "active", constant = "true")
+    PaymentCard toEntity(PaymentCardCreateRequest dto);
 
+    @Mapping(source = "user.id", target = "userId")
+    PaymentCardResponse toDto(PaymentCard entity);
+
+    void updateFromDto(PaymentCardUpdateRequest dto, @MappingTarget PaymentCard entity);
 
 }
