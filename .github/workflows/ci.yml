@@ -26,9 +26,11 @@ jobs:
       - name: Tests
         run: mvn test
 
+
       - name: SonarQube
-        run: mvn sonar:sonar
+        run: mvn sonar:sonar 
           -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} 
+          -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} 
           -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} 
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
