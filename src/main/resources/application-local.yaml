@@ -1,0 +1,15 @@
+spring:
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${DB_NAME:test_db}
+    username: postgres
+    password: ${DB_PASSWORD:secret}
+
+  data:
+    redis:
+      host: localhost
+
+
+
+
+
