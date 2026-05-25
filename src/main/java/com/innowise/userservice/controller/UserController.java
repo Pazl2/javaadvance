@@ -51,8 +51,7 @@ public class UserController {
     @PatchMapping("/{id}/active")
     public ResponseEntity<UserResponse> updateActive(@PathVariable Long id,
                                                      @RequestBody @Valid ActiveStatusRequest active){
-        userService.updateUserActivity(id, active.isActive());
-        UserResponse response = userService.getUserById(id);
+        UserResponse response = userService.updateUserActivity(id, active.isActive());
         return ResponseEntity.ok(response);
     }
 

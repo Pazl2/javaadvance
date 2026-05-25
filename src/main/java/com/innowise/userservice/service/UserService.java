@@ -91,8 +91,10 @@ public class UserService {
 
     @CacheEvict(value = "users", key = "#id")
     @Transactional
-    public void updateUserActivity(Long id, boolean active){
+    public UserResponse updateUserActivity(Long id, boolean active){
         userRepository.updateActive(id, active);
+        User user = getUserEntityById(id);
+        return userMapper.toDto(user);
     }
 
     @Caching(evict = {
