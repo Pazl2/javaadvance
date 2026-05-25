@@ -45,14 +45,14 @@ public class UserController {
     public ResponseEntity<UserResponse> updateUser(@PathVariable Long id,
                                                    @RequestBody @Valid UserUpdateRequest updateRequest){
         UserResponse response = userService.updateUser(id, updateRequest);
-
         return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{id}/active")
     public ResponseEntity<UserResponse> updateActive(@PathVariable Long id,
                                                      @RequestBody @Valid ActiveStatusRequest active){
-        UserResponse response = userService.updateUserActivity(id, active.isActive());
+        userService.updateUserActivity(id, active.isActive());
+        UserResponse response = userService.getUserById(id);
         return ResponseEntity.ok(response);
     }
 
@@ -63,11 +63,8 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ){
-        return ResponseEntity.ok().body(userService.getUsersWithPaginationAndFilter(firstName,surname,page,size));
+        return ResponseEntity.ok().body(userService.getUsersWithPaginationAndFilter(firstName, surname, page, size));
     }
-
-
-
 
     @PostMapping("/{userId}/cards")
     public ResponseEntity<PaymentCardResponse> createCard(@RequestBody @Valid PaymentCardCreateRequest dto,

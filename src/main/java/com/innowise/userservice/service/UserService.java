@@ -28,6 +28,7 @@ public class UserService {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
     }
+
     @Transactional
     public UserResponse createUser(UserCreateRequest dto){
         User user = userMapper.toEntity(dto);
@@ -44,10 +45,9 @@ public class UserService {
         return userMapper.toDto(user);
     }
 
-    private User getUserEntityById (Long userId){
+    private User getUserEntityById(Long userId){
         return userRepository.findById(userId).orElseThrow(
-                ()-> new ResourceNotFoundException("No such User with "+ userId + " id"));
-
+                () -> new ResourceNotFoundException("No such User with " + userId + " id"));
     }
 
     public Page<UserResponse> getUsersWithPaginationAndFilter(
@@ -91,10 +91,8 @@ public class UserService {
 
     @CacheEvict(value = "users", key = "#id")
     @Transactional
-    public UserResponse updateUserActivity(Long id, boolean active){
+    public void updateUserActivity(Long id, boolean active){
         userRepository.updateActive(id, active);
-        User user = getUserEntityById(id);
-        return userMapper.toDto(user);
     }
 
     @Caching(evict = {

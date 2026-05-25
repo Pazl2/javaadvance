@@ -7,6 +7,7 @@ import com.innowise.userservice.service.PaymentCardService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -56,6 +57,12 @@ public class PaymentCardController {
             @RequestBody @Valid ActiveStatusRequest active){
         return ResponseEntity.ok().body(
                 paymentCardService.updateActivity(id, active.isActive()));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCard(@PathVariable Long id){
+        paymentCardService.deleteCard(id);
+        return ResponseEntity.noContent().build();
     }
 
 }
