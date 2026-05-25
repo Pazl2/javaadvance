@@ -45,6 +45,11 @@ public class UserService {
         return userMapper.toDto(user);
     }
 
+    public UserResponse getUserByIdNoCache(Long userId) {
+        User user = getUserEntityById(userId);
+        return userMapper.toDto(user);
+    }
+
     private User getUserEntityById(Long userId){
         return userRepository.findById(userId).orElseThrow(
                 () -> new ResourceNotFoundException("No such User with " + userId + " id"));
@@ -91,10 +96,8 @@ public class UserService {
 
     @CacheEvict(value = "users", key = "#id")
     @Transactional
-    public UserResponse updateUserActivity(Long id, boolean active){
+    public void updateUserActivity(Long id, boolean active){
         userRepository.updateActive(id, active);
-        User user = getUserEntityById(id);
-        return userMapper.toDto(user);
     }
 
     @Caching(evict = {
