@@ -8,8 +8,9 @@
 		<version>3.5.5</version>
 		<relativePath/>
 	</parent>
-	<groupId>com.javaadvance</groupId>
-	<artifactId>demo</artifactId>
+
+	<groupId>com.innowise</groupId>
+	<artifactId>user-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
 	<properties>
@@ -122,6 +123,11 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.sonarsource.scanner.maven</groupId>
+				<artifactId>sonar-maven-plugin</artifactId>
+				<version>4.0.0.4121</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
