@@ -32,10 +32,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -48,7 +48,6 @@ class UserServiceTest {
 
     @InjectMocks
     private UserService userService;
-
 
     @Test
     void createUser_ShouldReturnUserResponse_WhenEmailIsUnique(){
@@ -74,10 +73,10 @@ class UserServiceTest {
         userResponse.setName("Ivan");
         userResponse.setEmail("ivanov@gmail.com");
 
-        when(userMapper.toEntity(userCreateRequest)).thenReturn(userBeforeSafe);
-        when(userRepository.existsByEmail(userCreateRequest.getEmail())).thenReturn(false);
-        when(userRepository.save(userBeforeSafe)).thenReturn(savedUser);
-        when(userMapper.toDto(savedUser)).thenReturn(userResponse);
+        doReturn(userBeforeSafe).when(userMapper).toEntity(userCreateRequest);
+        doReturn(false).when(userRepository).existsByEmail(userCreateRequest.getEmail());
+        doReturn(savedUser).when(userRepository).save(userBeforeSafe);
+        doReturn(userResponse).when(userMapper).toDto(savedUser);
 
         UserResponse result = userService.createUser(userCreateRequest);
 
@@ -96,20 +95,16 @@ class UserServiceTest {
         UserCreateRequest request = new UserCreateRequest();
         request.setEmail("ivanov@gmail.com");
 
-        when(userRepository.existsByEmail("ivanov@gmail.com")).thenReturn(true);
+        doReturn(true).when(userRepository).existsByEmail("ivanov@gmail.com");
 
         DuplicateEmailException exception = assertThrows(
                 DuplicateEmailException.class,
                 () -> userService.createUser(request)
         );
 
-
         assertTrue(exception.getMessage().contains("ivanov@gmail.com"));
-
         verify(userRepository, never()).save(any());
     }
-
-
 
     @Test
     void getUserById_ShouldReturnUserResponse_WhenUserExists() {
@@ -128,8 +123,8 @@ class UserServiceTest {
         expectedResponse.setEmail("ivan@example.com");
         expectedResponse.setActive(true);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userMapper.toDto(user)).thenReturn(expectedResponse);
+        doReturn(Optional.of(user)).when(userRepository).findById(userId);
+        doReturn(expectedResponse).when(userMapper).toDto(user);
 
         UserResponse result = userService.getUserById(userId);
 
@@ -144,7 +139,7 @@ class UserServiceTest {
     @Test
     void getUserById_ShouldThrowException_WhenUserNotFound() {
         Long userId = 999L;
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        doReturn(Optional.empty()).when(userRepository).findById(userId);
 
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
@@ -154,8 +149,6 @@ class UserServiceTest {
         assertTrue(exception.getMessage().contains("999"));
         verify(userMapper, never()).toDto(any());
     }
-
-
 
     @Test
     void updateUser_ShouldReturnUpdatedUserResponse_WhenEmailNotChanged() {
@@ -173,19 +166,14 @@ class UserServiceTest {
         existingUser.setName("OldName");
         existingUser.setEmail("old@example.com");
 
-        User updatedUser = new User();
-        updatedUser.setId(userId);
-        updatedUser.setName("Petr");
-        updatedUser.setEmail("petr@example.com");
-
         UserResponse responseDto = new UserResponse();
         responseDto.setId(userId);
         responseDto.setName("Petr");
         responseDto.setEmail("petr@example.com");
 
-        when(userRepository.existsByEmailAndIdNot("petr@example.com", userId)).thenReturn(false);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        when(userMapper.toDto(existingUser)).thenReturn(responseDto);
+        doReturn(false).when(userRepository).existsByEmailAndIdNot("petr@example.com", userId);
+        doReturn(Optional.of(existingUser)).when(userRepository).findById(userId);
+        doReturn(responseDto).when(userMapper).toDto(existingUser);
 
         UserResponse result = userService.updateUser(userId, request);
 
@@ -203,7 +191,7 @@ class UserServiceTest {
         UserUpdateRequest request = new UserUpdateRequest();
         request.setEmail("duplicate@example.com");
 
-        when(userRepository.existsByEmailAndIdNot("duplicate@example.com", userId)).thenReturn(true);
+        doReturn(true).when(userRepository).existsByEmailAndIdNot("duplicate@example.com", userId);
 
         DuplicateEmailException exception = assertThrows(
                 DuplicateEmailException.class,
@@ -220,7 +208,8 @@ class UserServiceTest {
         UserUpdateRequest request = new UserUpdateRequest();
         request.setEmail("some@example.com");
 
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        doReturn(false).when(userRepository).existsByEmailAndIdNot("some@example.com", userId);
+        doReturn(Optional.empty()).when(userRepository).findById(userId);
 
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
@@ -228,12 +217,9 @@ class UserServiceTest {
         );
 
         assertTrue(exception.getMessage().contains("999"));
-
         verify(userRepository, never()).updateUser(anyLong(), any(), any(), any(), any(), anyBoolean());
         verify(userMapper, never()).toDto(any());
     }
-
-
 
     @Test
     void getUsersWithPaginationAndFilter_ShouldReturnPageOfUserResponse_WhenFiltersProvided() {
@@ -257,9 +243,8 @@ class UserServiceTest {
 
         Page<User> userPage = new PageImpl<>(List.of(user), PageRequest.of(page, size), 1);
 
-        when(userRepository.findAll(any(Specification.class), any(Pageable.class)))
-                .thenReturn(userPage);
-        when(userMapper.toDto(user)).thenReturn(userResponse);
+        doReturn(userPage).when(userRepository).findAll(any(Specification.class), any(Pageable.class));
+        doReturn(userResponse).when(userMapper).toDto(user);
 
         Page<UserResponse> result = userService.getUsersWithPaginationAndFilter(firstName, surname, page, size);
 
@@ -272,8 +257,6 @@ class UserServiceTest {
         verify(userMapper, times(1)).toDto(user);
     }
 
-
-
     @Test
     void updateUserActivity_ShouldCallRepositoryUpdateActive() {
         Long userId = 1L;
@@ -281,11 +264,39 @@ class UserServiceTest {
         User user = new User();
         user.setId(userId);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        doReturn(Optional.of(user)).when(userRepository).findById(userId);
 
         userService.updateUserActivity(userId, active);
 
         verify(userRepository, times(1)).updateActive(userId, active);
         verify(userRepository, times(1)).findById(userId);
+    }
+
+    @Test
+    void updateUserActivity_ShouldThrowException_WhenUserNotFound() {
+        Long userId = 99L;
+        doReturn(Optional.empty()).when(userRepository).findById(userId);
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> userService.updateUserActivity(userId, false));
+    }
+
+    @Test
+    void deleteUser_ShouldDeleteUser_WhenUserExists() {
+        Long userId = 1L;
+        doReturn(true).when(userRepository).existsById(userId);
+
+        userService.deleteUser(userId);
+
+        verify(userRepository, times(1)).deleteById(userId);
+    }
+
+    @Test
+    void deleteUser_ShouldThrowException_WhenUserNotFound() {
+        Long userId = 99L;
+        doReturn(false).when(userRepository).existsById(userId);
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> userService.deleteUser(userId));
     }
 }
