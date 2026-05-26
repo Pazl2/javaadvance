@@ -70,7 +70,7 @@ class PaymentCardServiceTest {
         savedUser.addCard(card);
 
         doReturn(Optional.of(user)).when(userRepository).findById(userId);
-        doReturn(0L).when(paymentCardRepository).countByUserId(userId);
+        doReturn(0).when(paymentCardRepository).countByUserId(userId);
         doReturn(card).when(paymentCardMapper).toEntity(request);
         doReturn(savedUser).when(userRepository).save(user);
         doReturn(response).when(paymentCardMapper).toDto(any(PaymentCard.class));
@@ -100,7 +100,7 @@ class PaymentCardServiceTest {
         user.setId(userId);
 
         doReturn(Optional.of(user)).when(userRepository).findById(userId);
-        doReturn(5L).when(paymentCardRepository).countByUserId(userId);
+        doReturn(5).when(paymentCardRepository).countByUserId(userId);
 
         PaymentCardCreateRequest request = new PaymentCardCreateRequest();
         assertThrows(TooManyCardsException.class,
