@@ -278,9 +278,14 @@ class UserServiceTest {
     void updateUserActivity_ShouldCallRepositoryUpdateActive() {
         Long userId = 1L;
         boolean active = false;
+        User user = new User();
+        user.setId(userId);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         userService.updateUserActivity(userId, active);
 
         verify(userRepository, times(1)).updateActive(userId, active);
+        verify(userRepository, times(1)).findById(userId);
     }
 }

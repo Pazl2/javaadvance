@@ -41,13 +41,7 @@ public class UserService {
 
     @Cacheable(value = "users", key = "#userId")
     public UserResponse getUserById(Long userId) {
-        User user = getUserEntityById(userId);
-        return userMapper.toDto(user);
-    }
-
-    public UserResponse getUserByIdNoCache(Long userId) {
-        User user = getUserEntityById(userId);
-        return userMapper.toDto(user);
+        return userMapper.toDto(getUserEntityById(userId));
     }
 
     private User getUserEntityById(Long userId){
@@ -56,23 +50,17 @@ public class UserService {
     }
 
     public Page<UserResponse> getUsersWithPaginationAndFilter(
-            String firstName,
-            String surname,
-            int page, int size){
+            String firstName, String surname, int page, int size){
 
         Specification<User> spec = null;
-
         if (firstName != null && !firstName.isBlank()) {
             spec = UserSpecification.hasFirstName(firstName);
         }
         if (surname != null && !surname.isBlank()) {
-            if (spec == null) {
-                spec = UserSpecification.hasSurname(surname);
-            } else {
-                spec = spec.and(UserSpecification.hasSurname(surname));
-            }
+            spec = (spec == null)
+                    ? UserSpecification.hasSurname(surname)
+                    : spec.and(UserSpecification.hasSurname(surname));
         }
-
         return userRepository.findAll(spec, PageRequest.of(page, size))
                 .map(userMapper::toDto);
     }
@@ -80,13 +68,10 @@ public class UserService {
     @CacheEvict(value = "users", key = "#id")
     @Transactional
     public UserResponse updateUser(Long id, UserUpdateRequest dto){
-
         if(userRepository.existsByEmailAndIdNot(dto.getEmail(), id)){
             throw new DuplicateEmailException("User with email " + dto.getEmail() + " exists");
         }
-
         User user = getUserEntityById(id);
-
         userMapper.updateFromDto(dto, user);
         userRepository.updateUser(user.getId(), user.getName(),
                 user.getSurname(), user.getBirthDate(),
@@ -96,8 +81,9 @@ public class UserService {
 
     @CacheEvict(value = "users", key = "#id")
     @Transactional
-    public void updateUserActivity(Long id, boolean active){
+    public UserResponse updateUserActivity(Long id, boolean active){
         userRepository.updateActive(id, active);
+        return userMapper.toDto(getUserEntityById(id));
     }
 
     @Caching(evict = {

@@ -31,29 +31,24 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@RequestBody @Valid UserCreateRequest dto){
-        UserResponse response = userService.createUser(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(dto));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long id){
-        UserResponse response = userService.getUserById(id);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(userService.getUserById(id));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(@PathVariable Long id,
                                                    @RequestBody @Valid UserUpdateRequest updateRequest){
-        UserResponse response = userService.updateUser(id, updateRequest);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(userService.updateUser(id, updateRequest));
     }
 
     @PatchMapping("/{id}/active")
     public ResponseEntity<UserResponse> updateActive(@PathVariable Long id,
                                                      @RequestBody @Valid ActiveStatusRequest active){
-        userService.updateUserActivity(id, active.isActive());
-        UserResponse response = userService.getUserByIdNoCache(id);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(userService.updateUserActivity(id, active.isActive()));
     }
 
     @GetMapping
@@ -61,21 +56,19 @@ public class UserController {
             @RequestParam(required = false) String firstName,
             @RequestParam(required = false) String surname,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ){
-        return ResponseEntity.ok().body(userService.getUsersWithPaginationAndFilter(firstName, surname, page, size));
+            @RequestParam(defaultValue = "10") int size){
+        return ResponseEntity.ok(userService.getUsersWithPaginationAndFilter(firstName, surname, page, size));
     }
 
     @PostMapping("/{userId}/cards")
     public ResponseEntity<PaymentCardResponse> createCard(@RequestBody @Valid PaymentCardCreateRequest dto,
                                                           @PathVariable Long userId){
-        PaymentCardResponse response = paymentCardService.createCard(dto, userId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(paymentCardService.createCard(dto, userId));
     }
 
     @GetMapping("/{userId}/cards")
     public ResponseEntity<List<PaymentCardResponse>> getCardsByUserId(@PathVariable Long userId){
-        return ResponseEntity.ok().body(paymentCardService.getCardsByUserId(userId));
+        return ResponseEntity.ok(paymentCardService.getCardsByUserId(userId));
     }
 
     @DeleteMapping("/{id}")
