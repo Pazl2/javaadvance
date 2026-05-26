@@ -250,6 +250,7 @@ class PaymentCardServiceTest {
         verify(paymentCardRepository, times(1)).updateActive(cardId, false);
     }
 
+
     @Test
     void updateActivity_ShouldThrowResourceNotFoundException_WhenCardNotFound() {
         Long cardId = 99L;
