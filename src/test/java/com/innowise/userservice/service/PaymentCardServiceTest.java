@@ -28,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -162,7 +164,7 @@ class PaymentCardServiceTest {
         PaymentCardResponse response = new PaymentCardResponse();
         Page<PaymentCard> cardPage = new PageImpl<>(List.of(card));
 
-        doReturn(cardPage).when(paymentCardRepository).findAll(any(Specification.class), any(Pageable.class));
+        doReturn(cardPage).when(paymentCardRepository).findAll((Specification<PaymentCard>) isNull(), any(Pageable.class));
         doReturn(response).when(paymentCardMapper).toDto(card);
 
         Page<PaymentCardResponse> result =
@@ -214,7 +216,7 @@ class PaymentCardServiceTest {
 
         assertNotNull(result);
         verify(paymentCardRepository, times(1)).updatePaymentCard(
-                any(), any(), any(), any(), any());
+                any(), any(), any(), any(), anyBoolean());
     }
 
     @Test
