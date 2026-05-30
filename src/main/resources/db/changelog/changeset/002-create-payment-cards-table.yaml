@@ -1,0 +1,64 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-payment-cards
+      author: Pazl2
+      changes:
+        createTable:
+          tableName: payment_cards
+
+          columns:
+            - column:
+                name: id
+                type: bigint
+                autoIncrement: true
+                constraints:
+                  primaryKey: true
+                  nullable: false
+                  primaryKeyName: "pk_payment_cards"
+            - column:
+                name: user_id
+                type: bigint
+                constraints:
+                  nullable: false
+                  foreignKeyName: fk_payment_cards_users
+                  referencedTableName: users
+                  referencedColumnNames: id
+                  deleteCascade: true
+            - column:
+                name: number
+                type: varchar(30)
+                constraints:
+                  nullable: false
+            - column:
+                name: holder
+                type: varchar(30)
+                constraints:
+                  nullable: false
+            - column:
+                name: expiration_date
+                type: date
+                constraints:
+                  nullable: false
+            - column:
+                name: active
+                type: boolean
+                constraints:
+                  nullable: false
+            - column:
+                name: created_at
+                type: timestamp
+                defaultValueComputed: CURRENT_TIMESTAMP
+                constraints:
+                  nullable: false
+            - column:
+                name: updated_at
+                type: timestamp
+                defaultValueComputed: CURRENT_TIMESTAMP
+                constraints:
+                  nullable: false
+
+
+
+
+
+
