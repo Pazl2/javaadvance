@@ -14,7 +14,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         classes = UserServiceApplication.class
 )
 @ActiveProfiles("test")
-@Import(TestcontainersConfig.class)
+@Import({TestcontainersConfig.class, TestSecurityConfig.class})
 public abstract class BaseIntegrationTest {
 
     @Autowired
