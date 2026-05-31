@@ -9,6 +9,9 @@ spring:
 logging:
   level:
     org.testcontainers: DEBUG
+security:
+  method:
+    enabled: false
 
 jwt:
   secret: my-super-secret-key-for-jwt-token-signing-minimum-256-bits
