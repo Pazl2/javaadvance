@@ -1,6 +1,8 @@
 package com.innowise.userservice.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,11 +42,17 @@ public class JwtService {
         return extractClaims(token).get("role", String.class);
     }
 
+    public boolean isAccessToken(String token) {
+        return "access".equals(extractClaims(token).get("typ", String.class));
+    }
+
     public boolean isTokenValid(String token) {
         try {
             return extractClaims(token).getExpiration().after(new Date());
-        } catch (Exception e) {
+        } catch (ExpiredJwtException e) {
             return false;
+        } catch (JwtException e) {
+            throw new SecurityException("Invalid JWT token: " + e.getMessage());
         }
     }
 }
