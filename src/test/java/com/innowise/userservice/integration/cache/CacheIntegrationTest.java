@@ -48,16 +48,23 @@ class CacheIntegrationTest extends BaseIntegrationTest {
     }
 
     private UserResponse createUser(String email) {
+        // Use a fixed admin ID for creation (user doesn't exist yet)
+        authenticateAsAdmin(1L);
         UserCreateRequest request = new UserCreateRequest();
         request.setName("Test");
         request.setSurname("User");
         request.setBirthDate(LocalDate.of(1990, 1, 1));
         request.setEmail(email);
         request.setActive(true);
-        return restTemplate.postForEntity("/users", request, UserResponse.class).getBody();
+        UserResponse user = restTemplate.postForEntity("/users", request, UserResponse.class).getBody();
+        assertThat(user).isNotNull();
+        // Re-authenticate as admin with the real userId for subsequent requests
+        authenticateAsAdmin(user.getId());
+        return user;
     }
 
     private PaymentCardResponse createCard(Long userId, String number) {
+        authenticateAsAdmin(userId);
         PaymentCardCreateRequest request = new PaymentCardCreateRequest();
         request.setNumber(number);
         request.setHolder("TEST USER");
@@ -72,12 +79,12 @@ class CacheIntegrationTest extends BaseIntegrationTest {
     void shouldCacheUserAfterFirstGet() {
 
         UserResponse user = createUser("cache.user@example.com");
-        assertThat(user).isNotNull();
 
         Cache usersCache = cacheManager.getCache("users");
         assertThat(usersCache).isNotNull();
         assertThat(usersCache.get(user.getId())).isNull();
 
+        authenticateAsAdmin(user.getId());
         restTemplate.getForEntity("/users/" + user.getId(), UserResponse.class);
 
         assertThat(usersCache.get(user.getId())).isNotNull();
@@ -87,8 +94,8 @@ class CacheIntegrationTest extends BaseIntegrationTest {
     void shouldReturnSameDataFromCacheOnSecondGet() {
 
         UserResponse user = createUser("cache.double@example.com");
-        assertThat(user).isNotNull();
 
+        authenticateAsAdmin(user.getId());
         ResponseEntity<UserResponse> first =
                 restTemplate.getForEntity("/users/" + user.getId(), UserResponse.class);
 
@@ -107,8 +114,8 @@ class CacheIntegrationTest extends BaseIntegrationTest {
     void shouldEvictUserCacheAfterUpdate() {
 
         UserResponse user = createUser("cache.evict@example.com");
-        assertThat(user).isNotNull();
 
+        authenticateAsAdmin(user.getId());
         restTemplate.getForEntity("/users/" + user.getId(), UserResponse.class);
 
         Cache usersCache = cacheManager.getCache("users");
@@ -136,8 +143,8 @@ class CacheIntegrationTest extends BaseIntegrationTest {
     void shouldEvictUserCacheAfterActivityUpdate() {
 
         UserResponse user = createUser("cache.activity@example.com");
-        assertThat(user).isNotNull();
 
+        authenticateAsAdmin(user.getId());
         restTemplate.getForEntity("/users/" + user.getId(), UserResponse.class);
 
         Cache usersCache = cacheManager.getCache("users");
@@ -161,7 +168,6 @@ class CacheIntegrationTest extends BaseIntegrationTest {
     void shouldCacheCardAfterFirstGet() {
 
         UserResponse user = createUser("cache.card@example.com");
-        assertThat(user).isNotNull();
 
         PaymentCardResponse card = createCard(user.getId(), "4111111111111111");
         assertThat(card).isNotNull();
@@ -170,6 +176,7 @@ class CacheIntegrationTest extends BaseIntegrationTest {
         assertThat(cardsCache).isNotNull();
         assertThat(cardsCache.get(card.getId())).isNull();
 
+        authenticateAsAdmin(user.getId());
         restTemplate.getForEntity("/cards/" + card.getId(), PaymentCardResponse.class);
 
         assertThat(cardsCache.get(card.getId())).isNotNull();
@@ -179,7 +186,6 @@ class CacheIntegrationTest extends BaseIntegrationTest {
     void shouldCacheUserCardsAfterFirstGet() {
 
         UserResponse user = createUser("cache.usercards@example.com");
-        assertThat(user).isNotNull();
 
         createCard(user.getId(), "4111111111111111");
 
@@ -187,6 +193,7 @@ class CacheIntegrationTest extends BaseIntegrationTest {
         assertThat(userCardsCache).isNotNull();
         assertThat(userCardsCache.get(user.getId())).isNull();
 
+        authenticateAsAdmin(user.getId());
         restTemplate.getForEntity("/users/" + user.getId() + "/cards", String.class);
 
         assertThat(userCardsCache.get(user.getId())).isNotNull();
@@ -196,11 +203,11 @@ class CacheIntegrationTest extends BaseIntegrationTest {
     void shouldEvictCardCachesAfterCardUpdate() {
 
         UserResponse user = createUser("cache.cardupdate@example.com");
-        assertThat(user).isNotNull();
 
         PaymentCardResponse card = createCard(user.getId(), "4111111111111111");
         assertThat(card).isNotNull();
 
+        authenticateAsAdmin(user.getId());
         restTemplate.getForEntity("/cards/" + card.getId(), PaymentCardResponse.class);
         restTemplate.getForEntity("/users/" + user.getId() + "/cards", String.class);
 
@@ -232,11 +239,11 @@ class CacheIntegrationTest extends BaseIntegrationTest {
     void shouldEvictCardCachesAfterCardActivityUpdate() {
 
         UserResponse user = createUser("cache.cardactive@example.com");
-        assertThat(user).isNotNull();
 
         PaymentCardResponse card = createCard(user.getId(), "4111111111111111");
         assertThat(card).isNotNull();
 
+        authenticateAsAdmin(user.getId());
         restTemplate.getForEntity("/cards/" + card.getId(), PaymentCardResponse.class);
         restTemplate.getForEntity("/users/" + user.getId() + "/cards", String.class);
 
@@ -265,8 +272,8 @@ class CacheIntegrationTest extends BaseIntegrationTest {
     void shouldEvictUserAndCardCachesAfterCardCreation() {
 
         UserResponse user = createUser("cache.cardcreate@example.com");
-        assertThat(user).isNotNull();
 
+        authenticateAsAdmin(user.getId());
         restTemplate.getForEntity("/users/" + user.getId(), UserResponse.class);
         restTemplate.getForEntity("/users/" + user.getId() + "/cards", String.class);
 
