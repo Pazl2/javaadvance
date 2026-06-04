@@ -2,7 +2,6 @@ package com.innowise.userservice.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innowise.userservice.dto.ErrorResponse;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -26,7 +25,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    @ConditionalOnMissingBean(SecurityFilterChain.class)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)

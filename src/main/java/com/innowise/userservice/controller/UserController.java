@@ -37,13 +37,13 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or authentication.principal == #id")
+    @PreAuthorize("hasRole('ADMIN') or authentication.principal.userId == #id")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or authentication.principal == #id")
+    @PreAuthorize("hasRole('ADMIN') or authentication.principal.userId == #id")
     public ResponseEntity<UserResponse> updateUser(@PathVariable Long id,
                                                    @RequestBody @Valid UserUpdateRequest updateRequest) {
         return ResponseEntity.ok(userService.updateUser(id, updateRequest));
@@ -67,14 +67,14 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/cards")
-    @PreAuthorize("hasRole('ADMIN') or authentication.principal == #userId")
+    @PreAuthorize("hasRole('ADMIN') or authentication.principal.userId == #userId")
     public ResponseEntity<PaymentCardResponse> createCard(@RequestBody @Valid PaymentCardCreateRequest dto,
                                                           @PathVariable Long userId) {
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentCardService.createCard(dto, userId));
     }
 
     @GetMapping("/{userId}/cards")
-    @PreAuthorize("hasRole('ADMIN') or authentication.principal == #userId")
+    @PreAuthorize("hasRole('ADMIN') or authentication.principal.userId == #userId")
     public ResponseEntity<List<PaymentCardResponse>> getCardsByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(paymentCardService.getCardsByUserId(userId));
     }

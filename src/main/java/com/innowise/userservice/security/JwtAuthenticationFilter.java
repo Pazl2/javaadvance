@@ -11,6 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -19,11 +20,11 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private final AuthServiceClient authServiceClient;
     private final ObjectMapper objectMapper;
 
-    public JwtAuthenticationFilter(JwtService jwtService, ObjectMapper objectMapper) {
-        this.jwtService = jwtService;
+    public JwtAuthenticationFilter(AuthServiceClient authServiceClient, ObjectMapper objectMapper) {
+        this.authServiceClient = authServiceClient;
         this.objectMapper = objectMapper;
     }
 
@@ -41,33 +42,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
 
-        if (!jwtService.isTokenValid(token)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            objectMapper.writeValue(response.getWriter(),
-                    new ErrorResponse(401, "Unauthorized", "Invalid or expired token"));
+        ValidateResponse validateResponse;
+        try {
+            validateResponse = authServiceClient.validate(token);
+        } catch (RestClientException e) {
+            writeUnauthorized(response, "Invalid or expired token");
             return;
         }
 
-        if (!jwtService.isAccessToken(token)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            objectMapper.writeValue(response.getWriter(),
-                    new ErrorResponse(401, "Unauthorized", "Access token required"));
+        if (!"access".equals(validateResponse.tokenType())) {
+            writeUnauthorized(response, "Token is not an access token");
             return;
         }
 
-        Long userId = jwtService.extractUserId(token);
-        String role = jwtService.extractRole(token);
+        if (validateResponse.userId() == null || validateResponse.role() == null) {
+            writeUnauthorized(response, "Token is missing required claims");
+            return;
+        }
+
+        UserPrincipal principal = new UserPrincipal(Long.parseLong(validateResponse.userId()));
 
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
-                        userId,
+                        principal,
                         null,
-                        List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                        List.of(new SimpleGrantedAuthority("ROLE_" + validateResponse.role()))
                 );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         filterChain.doFilter(request, response);
+    }
+
+    private void writeUnauthorized(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        objectMapper.writeValue(response.getWriter(),
+                new ErrorResponse(401, "Unauthorized", message));
     }
 }
