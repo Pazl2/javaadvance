@@ -9,3 +9,11 @@ spring:
 logging:
   level:
     org.testcontainers: DEBUG
+security:
+  method:
+    enabled: false
+
+jwt:
+  secret: my-super-secret-key-for-jwt-token-signing-minimum-256-bits
+  access-token-expiration: 900000
+  refresh-token-expiration: 604800000

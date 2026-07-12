@@ -34,13 +34,26 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     private UserResponse createUser(String email) {
+        authenticateAsAdmin(1L);
         UserCreateRequest request = new UserCreateRequest();
         request.setName("Test");
         request.setSurname("User");
         request.setBirthDate(LocalDate.of(1990, 1, 1));
         request.setEmail(email);
         request.setActive(true);
-        return restTemplate.postForEntity("/users", request, UserResponse.class).getBody();
+        return restTemplate.exchange(
+                "/users", HttpMethod.POST,
+                new HttpEntity<>(request), UserResponse.class
+        ).getBody();
+    }
+
+    private PaymentCardResponse createCard(Long userId, String number) {
+        authenticateAsUser(userId);
+        PaymentCardCreateRequest request = buildCard(number);
+        return restTemplate.exchange(
+                "/users/" + userId + "/cards", HttpMethod.POST,
+                new HttpEntity<>(request), PaymentCardResponse.class
+        ).getBody();
     }
 
     private PaymentCardCreateRequest buildCard(String number) {
@@ -54,16 +67,14 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldCreateCardSuccessfully() {
-
         UserResponse user = createUser("cardowner@example.com");
         assertThat(user).isNotNull();
 
-        ResponseEntity<PaymentCardResponse> response =
-                restTemplate.postForEntity(
-                        "/users/" + user.getId() + "/cards",
-                        buildCard("4111111111111111"),
-                        PaymentCardResponse.class
-                );
+        authenticateAsUser(user.getId());
+        ResponseEntity<PaymentCardResponse> response = restTemplate.exchange(
+                "/users/" + user.getId() + "/cards", HttpMethod.POST,
+                new HttpEntity<>(buildCard("4111111111111111")), PaymentCardResponse.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();
@@ -74,13 +85,12 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturnNotFoundWhenCreatingCardForNonExistentUser() {
+        authenticateAsAdmin(1L);
 
-        ResponseEntity<ErrorResponse> response =
-                restTemplate.postForEntity(
-                        "/users/999999/cards",
-                        buildCard("4111111111111111"),
-                        ErrorResponse.class
-                );
+        ResponseEntity<ErrorResponse> response = restTemplate.exchange(
+                "/users/999999/cards", HttpMethod.POST,
+                new HttpEntity<>(buildCard("4111111111111111")), ErrorResponse.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isNotNull();
@@ -89,24 +99,21 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturnErrorWhenCardLimitExceeded() {
-
         UserResponse user = createUser("limitcards@example.com");
         assertThat(user).isNotNull();
 
+        authenticateAsUser(user.getId());
         for (int i = 1; i <= 5; i++) {
-            restTemplate.postForEntity(
-                    "/users/" + user.getId() + "/cards",
-                    buildCard("411111111111111" + i),
-                    PaymentCardResponse.class
+            restTemplate.exchange(
+                    "/users/" + user.getId() + "/cards", HttpMethod.POST,
+                    new HttpEntity<>(buildCard("411111111111111" + i)), PaymentCardResponse.class
             );
         }
 
-        ResponseEntity<ErrorResponse> response =
-                restTemplate.postForEntity(
-                        "/users/" + user.getId() + "/cards",
-                        buildCard("5555555555555555"),
-                        ErrorResponse.class
-                );
+        ResponseEntity<ErrorResponse> response = restTemplate.exchange(
+                "/users/" + user.getId() + "/cards", HttpMethod.POST,
+                new HttpEntity<>(buildCard("5555555555555555")), ErrorResponse.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
         assertThat(response.getBody()).isNotNull();
@@ -115,18 +122,16 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturnCardsByUserId() {
-
         UserResponse user = createUser("cardsuser@example.com");
         assertThat(user).isNotNull();
 
-        restTemplate.postForEntity(
-                "/users/" + user.getId() + "/cards",
-                buildCard("4444444444444444"),
-                PaymentCardResponse.class
-        );
+        createCard(user.getId(), "4444444444444444");
+        authenticateAsUser(user.getId());
 
-        ResponseEntity<String> response =
-                restTemplate.getForEntity("/users/" + user.getId() + "/cards", String.class);
+        ResponseEntity<String> response = restTemplate.exchange(
+                "/users/" + user.getId() + "/cards", HttpMethod.GET,
+                HttpEntity.EMPTY, String.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).contains("4444444444444444");
@@ -134,12 +139,15 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturnEmptyListWhenUserHasNoCards() {
-
         UserResponse user = createUser("nocards@example.com");
         assertThat(user).isNotNull();
 
-        ResponseEntity<String> response =
-                restTemplate.getForEntity("/users/" + user.getId() + "/cards", String.class);
+        authenticateAsUser(user.getId());
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                "/users/" + user.getId() + "/cards", HttpMethod.GET,
+                HttpEntity.EMPTY, String.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).contains("[]");
@@ -147,21 +155,17 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldGetCardByIdSuccessfully() {
-
         UserResponse user = createUser("getcard@example.com");
         assertThat(user).isNotNull();
 
-        PaymentCardResponse created =
-                restTemplate.postForEntity(
-                        "/users/" + user.getId() + "/cards",
-                        buildCard("4111111111111111"),
-                        PaymentCardResponse.class
-                ).getBody();
-
+        PaymentCardResponse created = createCard(user.getId(), "4111111111111111");
         assertThat(created).isNotNull();
 
-        ResponseEntity<PaymentCardResponse> response =
-                restTemplate.getForEntity("/cards/" + created.getId(), PaymentCardResponse.class);
+        authenticateAsAdmin(1L);
+        ResponseEntity<PaymentCardResponse> response = restTemplate.exchange(
+                "/cards/" + created.getId(), HttpMethod.GET,
+                HttpEntity.EMPTY, PaymentCardResponse.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -171,9 +175,12 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturnNotFoundWhenCardDoesNotExist() {
+        authenticateAsAdmin(1L);
 
-        ResponseEntity<ErrorResponse> response =
-                restTemplate.getForEntity("/cards/999999", ErrorResponse.class);
+        ResponseEntity<ErrorResponse> response = restTemplate.exchange(
+                "/cards/999999", HttpMethod.GET,
+                HttpEntity.EMPTY, ErrorResponse.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isNotNull();
@@ -182,32 +189,23 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldUpdateCardSuccessfully() {
-
         UserResponse user = createUser("updatecard@example.com");
         assertThat(user).isNotNull();
 
-        PaymentCardResponse created =
-                restTemplate.postForEntity(
-                        "/users/" + user.getId() + "/cards",
-                        buildCard("4111111111111111"),
-                        PaymentCardResponse.class
-                ).getBody();
-
+        PaymentCardResponse created = createCard(user.getId(), "4111111111111111");
         assertThat(created).isNotNull();
 
+        authenticateAsAdmin(1L);
         PaymentCardUpdateRequest updateRequest = new PaymentCardUpdateRequest();
         updateRequest.setNumber("5500005555555559");
         updateRequest.setHolder("UPDATED HOLDER");
         updateRequest.setExpirationDate(LocalDate.of(2030, 6, 30));
         updateRequest.setActive(true);
 
-        ResponseEntity<PaymentCardResponse> response =
-                restTemplate.exchange(
-                        "/cards/" + created.getId(),
-                        HttpMethod.PUT,
-                        new HttpEntity<>(updateRequest),
-                        PaymentCardResponse.class
-                );
+        ResponseEntity<PaymentCardResponse> response = restTemplate.exchange(
+                "/cards/" + created.getId(), HttpMethod.PUT,
+                new HttpEntity<>(updateRequest), PaymentCardResponse.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -217,29 +215,20 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldUpdateCardActivitySuccessfully() {
-
         UserResponse user = createUser("activecard@example.com");
         assertThat(user).isNotNull();
 
-        PaymentCardResponse created =
-                restTemplate.postForEntity(
-                        "/users/" + user.getId() + "/cards",
-                        buildCard("4111111111111111"),
-                        PaymentCardResponse.class
-                ).getBody();
-
+        PaymentCardResponse created = createCard(user.getId(), "4111111111111111");
         assertThat(created).isNotNull();
 
+        authenticateAsAdmin(1L);
         ActiveStatusRequest statusRequest = new ActiveStatusRequest();
         statusRequest.setActive(false);
 
-        ResponseEntity<PaymentCardResponse> response =
-                restTemplate.exchange(
-                        "/cards/" + created.getId() + "/active",
-                        HttpMethod.PATCH,
-                        new HttpEntity<>(statusRequest),
-                        PaymentCardResponse.class
-                );
+        ResponseEntity<PaymentCardResponse> response = restTemplate.exchange(
+                "/cards/" + created.getId() + "/active", HttpMethod.PATCH,
+                new HttpEntity<>(statusRequest), PaymentCardResponse.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -248,26 +237,17 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldDeleteCardSuccessfully() {
-
         UserResponse user = createUser("deletecard@example.com");
         assertThat(user).isNotNull();
 
-        PaymentCardResponse created =
-                restTemplate.postForEntity(
-                        "/users/" + user.getId() + "/cards",
-                        buildCard("4111111111111111"),
-                        PaymentCardResponse.class
-                ).getBody();
-
+        PaymentCardResponse created = createCard(user.getId(), "4111111111111111");
         assertThat(created).isNotNull();
 
-        ResponseEntity<Void> response =
-                restTemplate.exchange(
-                        "/cards/" + created.getId(),
-                        HttpMethod.DELETE,
-                        null,
-                        Void.class
-                );
+        authenticateAsAdmin(1L);
+        ResponseEntity<Void> response = restTemplate.exchange(
+                "/cards/" + created.getId(), HttpMethod.DELETE,
+                HttpEntity.EMPTY, Void.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         assertThat(paymentCardRepository.existsById(created.getId())).isFalse();
@@ -275,14 +255,12 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturnNotFoundWhenDeletingNonExistentCard() {
+        authenticateAsAdmin(1L);
 
-        ResponseEntity<ErrorResponse> response =
-                restTemplate.exchange(
-                        "/cards/999999",
-                        HttpMethod.DELETE,
-                        null,
-                        ErrorResponse.class
-                );
+        ResponseEntity<ErrorResponse> response = restTemplate.exchange(
+                "/cards/999999", HttpMethod.DELETE,
+                HttpEntity.EMPTY, ErrorResponse.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isNotNull();
@@ -291,7 +269,7 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturnFilteredCardsByUserFirstName() {
-
+        authenticateAsAdmin(1L);
         UserCreateRequest userRequest1 = new UserCreateRequest();
         userRequest1.setName("Ivan");
         userRequest1.setSurname("Ivanov");
@@ -306,17 +284,20 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
         userRequest2.setEmail("maria.filter@example.com");
         userRequest2.setActive(true);
 
-        UserResponse user1 = restTemplate.postForEntity("/users", userRequest1, UserResponse.class).getBody();
-        UserResponse user2 = restTemplate.postForEntity("/users", userRequest2, UserResponse.class).getBody();
+        UserResponse user1 = restTemplate.exchange("/users", HttpMethod.POST, new HttpEntity<>(userRequest1), UserResponse.class).getBody();
+        UserResponse user2 = restTemplate.exchange("/users", HttpMethod.POST, new HttpEntity<>(userRequest2), UserResponse.class).getBody();
 
         assertThat(user1).isNotNull();
         assertThat(user2).isNotNull();
 
-        restTemplate.postForEntity("/users/" + user1.getId() + "/cards", buildCard("4111111111111111"), PaymentCardResponse.class);
-        restTemplate.postForEntity("/users/" + user2.getId() + "/cards", buildCard("5500005555555559"), PaymentCardResponse.class);
+        createCard(user1.getId(), "4111111111111111");
+        createCard(user2.getId(), "5500005555555559");
 
-        ResponseEntity<String> response =
-                restTemplate.getForEntity("/cards?firstName=Ivan&page=0&size=10", String.class);
+        authenticateAsAdmin(1L);
+        ResponseEntity<String> response = restTemplate.exchange(
+                "/cards?firstName=Ivan&page=0&size=10", HttpMethod.GET,
+                HttpEntity.EMPTY, String.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).contains("4111111111111111");
@@ -325,7 +306,7 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void shouldReturnFilteredCardsByUserSurname() {
-
+        authenticateAsAdmin(1L);
         UserCreateRequest userRequest1 = new UserCreateRequest();
         userRequest1.setName("Ivan");
         userRequest1.setSurname("Ivanov");
@@ -340,20 +321,45 @@ class PaymentCardControllerIntegrationTest extends BaseIntegrationTest {
         userRequest2.setEmail("maria.surname@example.com");
         userRequest2.setActive(true);
 
-        UserResponse user1 = restTemplate.postForEntity("/users", userRequest1, UserResponse.class).getBody();
-        UserResponse user2 = restTemplate.postForEntity("/users", userRequest2, UserResponse.class).getBody();
+        UserResponse user1 = restTemplate.exchange("/users", HttpMethod.POST, new HttpEntity<>(userRequest1), UserResponse.class).getBody();
+        UserResponse user2 = restTemplate.exchange("/users", HttpMethod.POST, new HttpEntity<>(userRequest2), UserResponse.class).getBody();
 
         assertThat(user1).isNotNull();
         assertThat(user2).isNotNull();
 
-        restTemplate.postForEntity("/users/" + user1.getId() + "/cards", buildCard("4111111111111111"), PaymentCardResponse.class);
-        restTemplate.postForEntity("/users/" + user2.getId() + "/cards", buildCard("5500005555555559"), PaymentCardResponse.class);
+        createCard(user1.getId(), "4111111111111111");
+        createCard(user2.getId(), "5500005555555559");
 
-        ResponseEntity<String> response =
-                restTemplate.getForEntity("/cards?surname=Ivanov&page=0&size=10", String.class);
+        authenticateAsAdmin(1L);
+        ResponseEntity<String> response = restTemplate.exchange(
+                "/cards?surname=Ivanov&page=0&size=10", HttpMethod.GET,
+                HttpEntity.EMPTY, String.class
+        );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).contains("4111111111111111");
         assertThat(response.getBody()).doesNotContain("5500005555555559");
+    }
+
+    @Test
+    void shouldReturn401WhenNoToken() {
+        ResponseEntity<ErrorResponse> response = restTemplate.exchange(
+                "/cards", HttpMethod.GET,
+                HttpEntity.EMPTY, ErrorResponse.class
+        );
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void shouldReturn403WhenUserAccessesAdminCardEndpoint() {
+        UserResponse user = createUser("forbidden@example.com");
+        assertThat(user).isNotNull();
+
+        authenticateAsUser(user.getId());
+        ResponseEntity<ErrorResponse> response = restTemplate.exchange(
+                "/cards/999999", HttpMethod.GET,
+                HttpEntity.EMPTY, ErrorResponse.class
+        );
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 }
